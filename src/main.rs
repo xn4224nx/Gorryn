@@ -15,7 +15,7 @@ fn main() {
     );
 
     /* Consult the API and try and get the related sub-domains. */
-    let subdomains = sub_domain_lookup::cont_get(&root_domain);
+    let subdomains = sub_domain_lookup::lookup(&root_domain);
     println!("\tSUBDOMAINS = {}", subdomains.len());
 
     /* Scan all the subdomains. */

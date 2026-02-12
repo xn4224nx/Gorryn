@@ -3,6 +3,80 @@
  */
 
 use std::collections::HashSet;
+use std::fs::{File, create_dir_all, remove_file};
+use std::io::{BufRead, BufReader, BufWriter, Write};
+use std::path::Path;
+
+const SUB_DOM_DIR: &str = "./subdirs/";
+
+/// An overall function to handle saving and reading the subdoamins from disk.
+pub fn lookup(root_domain: &str) -> Vec<String> {
+    /* Is there valid subdomin data saved on disk */
+    if let Some(data) = read_saved_data(root_domain) {
+        return data;
+    };
+
+    /* Otherwise consult the API. */
+    let api_doms = cont_get(root_domain);
+
+    /* Save the API data to disk. */
+    save_api_data(root_domain, &api_doms);
+
+    return api_doms;
+}
+
+/// Read the pre-saved domain lookup if it exists.
+fn read_saved_data(root_domain: &str) -> Option<Vec<String>> {
+    let does_dir_exist = Path::new(SUB_DOM_DIR).try_exists();
+
+    /* Does the subdomain folder exist? If not create it */
+    if does_dir_exist.is_err() || does_dir_exist.unwrap() == false {
+        create_dir_all(SUB_DOM_DIR).ok()?;
+        return None;
+    }
+
+    /* Try and open the data file */
+    let data_file_pth = Path::new(SUB_DOM_DIR).join(root_domain.replace(".", "_").to_lowercase());
+    let file_ent = File::open(data_file_pth).ok()?;
+    let mut f_ptr = BufReader::new(file_ent);
+    let mut buffer = String::new();
+    let mut prev_domains = Vec::new();
+
+    /* Try and read the previous subdomain data. */
+    while f_ptr.read_line(&mut buffer).ok()? > 0 {
+        prev_domains.push(buffer.trim_end().to_string());
+        buffer.clear();
+    }
+
+    return Some(prev_domains);
+}
+
+/// Save the api data to disk
+fn save_api_data(root_domain: &str, sub_doms: &Vec<String>) -> Option<()> {
+    let data_file_pth = Path::new(SUB_DOM_DIR).join(root_domain.replace(".", "_").to_lowercase());
+    let does_dir_exist = Path::new(SUB_DOM_DIR).try_exists();
+
+    /* Does the subdomain folder exist? If not create it */
+    if does_dir_exist.is_err() || does_dir_exist.unwrap() == false {
+        create_dir_all(SUB_DOM_DIR).ok()?;
+    }
+
+    /* Does the data file exist, if so delete it. */
+    if data_file_pth.exists() {
+        remove_file(&data_file_pth).ok()?;
+    }
+
+    /* Create the file and open it. */
+    let data_file = File::create(&data_file_pth).ok()?;
+    let mut f_ptr = BufWriter::new(data_file);
+
+    /* Write the data to it. */
+    for sd_idx in 0..sub_doms.len() {
+        writeln!(f_ptr, "{}", sub_doms[sd_idx]).ok()?;
+    }
+
+    return Some(());
+}
 
 /// Keep attempting to get the subdomains.
 pub fn cont_get(root_domain: &str) -> Vec<String> {
