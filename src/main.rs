@@ -4,7 +4,7 @@
 
 mod parse_args;
 mod scanner;
-mod sub_domain_lookup;
+mod subdomains;
 
 fn main() {
     let root_domain = parse_args::get();
@@ -15,11 +15,11 @@ fn main() {
     );
 
     /* Consult the API and try and get the related sub-domains. */
-    let subdomains = sub_domain_lookup::lookup(&root_domain);
-    println!("\tSUBDOMAINS = {}", subdomains.len());
+    let sub_domains = subdomains::lookup(&root_domain);
+    println!("\tSUBDOMAINS = {}", sub_domains.len());
 
-    /* Scan all the subdomains. */
-    for sdom in subdomains.into_iter() {
+    /* Scan all the sub-domains. */
+    for sdom in sub_domains.into_iter() {
         print!("\t{: <50} - ", sdom.to_ascii_uppercase());
         let open_ports = scanner::common_ports(&sdom);
         print!("{}", open_ports.len());

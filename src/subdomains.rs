@@ -79,7 +79,7 @@ fn save_api_data(root_domain: &str, sub_doms: &Vec<String>) -> Option<()> {
 }
 
 /// Keep attempting to get the subdomains.
-pub fn cont_get(root_domain: &str) -> Vec<String> {
+fn cont_get(root_domain: &str) -> Vec<String> {
     let mut scan_delay: u64 = 1;
 
     /* Keep trying until a response is recieved. */
@@ -94,7 +94,7 @@ pub fn cont_get(root_domain: &str) -> Vec<String> {
 }
 
 /// Use the site to get a distint list of sub-domains
-pub fn get(root_domain: &str) -> Option<Vec<String>> {
+fn get(root_domain: &str) -> Option<Vec<String>> {
     return extract_subdomains(
         &reqwest::blocking::get(format!("https://crt.sh/?q=%25.{}&output=json", root_domain))
             .ok()?
