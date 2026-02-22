@@ -5,7 +5,7 @@
 mod crt_sh_scrape;
 mod file_sys_io;
 mod parse_args;
-mod scanner;
+mod port_scanner;
 
 fn main() {
     let root_domain = parse_args::get();
@@ -38,7 +38,7 @@ fn main() {
     /* Scan all the sub-domains. */
     for sdom in sub_domains.into_iter() {
         print!("\t{: <50} - ", sdom.to_ascii_uppercase());
-        let open_ports = scanner::common_ports(&sdom);
+        let open_ports = port_scanner::common_ports(&sdom);
         print!("{}", open_ports.len());
         if !open_ports.is_empty() {
             println!(" - {:?}", open_ports);
