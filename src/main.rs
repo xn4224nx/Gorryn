@@ -6,6 +6,7 @@ mod crt_sh_scrape;
 mod file_sys_io;
 mod parse_args;
 mod port_scanner;
+use rayon::prelude::*;
 
 fn main() {
     let root_domain = parse_args::get();
@@ -35,15 +36,29 @@ fn main() {
         sdoms
     };
 
+    /* Create the thread pool. */
+    let thread_pool = rayon::ThreadPoolBuilder::new()
+        .num_threads(256)
+        .build()
+        .unwrap();
+
     /* Scan all the sub-domains. */
-    for sdom in sub_domains.into_iter() {
-        print!("\t{: <50} - ", sdom.to_ascii_uppercase());
-        let open_ports = port_scanner::common_ports(&sdom);
-        print!("{}", open_ports.len());
-        if !open_ports.is_empty() {
-            println!(" - {:?}", open_ports);
-        } else {
-            println!();
+    thread_pool.install(|| {
+        let results: Vec<(String, Vec<u16>)> = sub_domains
+            .into_par_iter()
+            .map(|url| {
+                (
+                    url.clone(),
+                    port_scanner::domain_port_scan(&url, &vec![7, 20, 21, 22, 80, 88]),
+                )
+            })
+            .collect();
+
+        /* Show the results. */
+        for r_idx in 0..results.len() {
+            if !results[r_idx].1.is_empty() {
+                println!("\t{}:{:?}", results[r_idx].0, results[r_idx].1);
+            }
         }
-    }
+    });
 }
